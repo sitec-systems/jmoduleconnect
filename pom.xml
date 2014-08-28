@@ -65,8 +65,8 @@
   </dependencies>
   
   <scm>
-      <connection>scm:svn:http://172.16.40.5/svn/12_0004/tags/jModuleConnect-1.1.0</connection>
-      <developerConnection>scm:svn:http://172.16.40.5/svn/12_0004/RB-1.1.0/tags/jModuleConnect-1.1.0</developerConnection>
+      <connection>scm:svn:http://172.16.40.5/svn/12_0004/branches/RB-1.1.0</connection>
+      <developerConnection>scm:svn:http://172.16.40.5/svn/12_0004/branches/RB-1.1.0/</developerConnection>
   </scm>
   
   <build>

@@ -65,8 +65,8 @@
   </dependencies>
   
   <scm>
-      <connection>scm:svn:http://172.16.40.5/svn/12_0004/trunk</connection>
-      <developerConnection>scm:svn:http://172.16.40.5/svn/12_0004/trunk</developerConnection>
+      <connection>scm:svn:http://172.16.40.5/svn/12_0004/branches/RB-1.1.1</connection>
+      <developerConnection>scm:svn:http://172.16.40.5/svn/12_0004/branches/RB-1.1.1</developerConnection>
   </scm>
   
   <build>

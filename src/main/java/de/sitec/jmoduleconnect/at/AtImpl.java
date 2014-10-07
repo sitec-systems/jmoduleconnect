@@ -48,12 +48,17 @@ public class AtImpl implements At
     private static final Logger LOG = LoggerFactory.getLogger(AtImpl.class);
     private static final byte DEFAULT_SLEEP_MILLIS = 10;
     private static final short AT_RESPONSE_TIMEOUT = 5000;
+    private static final int AT_RESPONSE_TIMEOUT_ATD = 150000;
     private static final byte WAIT_TIMEOUT = 2;
     private static final byte WAIT_TRAILS = 3;
+    private static final byte WAIT_TRAILS_ATD = 90;
     private static final Charset BYTE_CHARSET = Charset.forName("ISO_8859_1");
     private static final String AT_START = "AT"; 
     private static final String AT_OK = "OK\r"; 
     private static final String AT_ERROR = "ERROR\r";
+    private static final String AT_NO_CARRIER = "NO CARRIER\r";
+    private static final String AT_NO_DIALTONE = "NO DIALTONE\r";
+    private static final String AT_BUSY = "BUSY\r";
 
     private AtImpl(final CommHandler commHandler)
     {
@@ -249,19 +254,62 @@ public class AtImpl implements At
                     + atCommand);
         }
         
+        // This check is necessary to prevent again a long timeout of ATD command
+        // if the modem not available
+        if(atCommUpper.contains("ATD"))
+        {
+            try
+            {
+                sendAtCommand("AT");
+            }
+            catch(final AtCommandFailedException ex)
+            {
+                throw new AtCommandFailedException("The sending of ATD has failed", ex);
+            }
+            catch(final IOException ex)
+            {
+                throw new IOException("The sending of ATD has failed", ex);
+            }
+        }
+        
+        return sendAtCommand(atCommUpper);
+    }
+    
+    /**
+     * Sends an AT command without checks and gets the response.
+     * @param atCommand The AT command
+     * @return The response of the AT command
+     * @throws AtCommandFailedException The AT command has failed
+     * @throws IOException The communication to modem has failed
+     * @since 1.2
+     */
+    private String sendAtCommand(final String atCommand) 
+            throws AtCommandFailedException, IOException
+    {   
+        final byte waitTrails;
+        
+        if(atCommand.contains("ATD"))
+        {
+            waitTrails = WAIT_TRAILS_ATD;
+        }
+        else
+        {
+            waitTrails = WAIT_TRAILS;
+        }
+        
         try
         {
-            LOG.debug("Send AT command: {}", atCommUpper);
-            final String parameter = atCommUpper + "\r";
+            LOG.debug("Send AT command: {}", atCommand);
+            final String parameter = atCommand + "\r";
             commHandler.send(parameter.getBytes(BYTE_CHARSET));
             
             String response = null;
-            byte waitTrails = 0;
+            byte waitTrailsCount = 0;
             
             lock.lock();
             try
             {
-                while(atResponse == null && waitTrails < WAIT_TRAILS)
+                while(atResponse == null && waitTrailsCount < waitTrails)
                 {
                     try
                     {
@@ -271,7 +319,7 @@ public class AtImpl implements At
                     {
                         LOG.error("Interrupt at waiting for AT response", ex);
                     }
-                    waitTrails++;
+                    waitTrailsCount++;
                 }
                 response = atResponse;
                 atResponse = null;
@@ -283,15 +331,15 @@ public class AtImpl implements At
             
             if(response == null || response.contains(AT_ERROR))
             {
-                throw new AtCommandFailedException("The AT command: " + atCommUpper 
+                throw new AtCommandFailedException("The AT command: " + atCommand
                         + " failed");
             }
             
-            LOG.debug("Response of AT command: {} is: {}", atCommUpper, response);
+            LOG.debug("Response of AT command: {} is: {}", atCommand, response);
             
-            checkModeChange(atCommUpper);
+            checkModeChange(atCommand);
             
-            return removeEcho(atCommUpper, response);
+            return removeEcho(atCommand, response);
         }
         catch (final IOException ex)
         {
@@ -364,64 +412,74 @@ public class AtImpl implements At
     {
         final long t1 = System.currentTimeMillis();
         final byte[] buf = new byte[512];
-        final ByteArrayOutputStream bos = new ByteArrayOutputStream();
-        boolean received = false;
         String result = null;
         
-        while(!received)
+        try(final ByteArrayOutputStream bos = new ByteArrayOutputStream())
         {
-            if(serialIn.available() > 0) 
+            boolean received = false;
+            int atResponseTimeout = AT_RESPONSE_TIMEOUT;
+
+            while(!received)
             {
-                final int readCount = serialIn.read(buf);
-                bos.write(buf, 0, readCount);
-                
-                final String response = new String(bos.toByteArray(), BYTE_CHARSET);
-                
-                if(response.length() > 3)
+                if(serialIn.available() > 0) 
                 {
-                    if(response.contains(AT_START))
+                    final int readCount = serialIn.read(buf);
+                    bos.write(buf, 0, readCount);
+
+                    final String response = new String(bos.toByteArray(), BYTE_CHARSET);
+
+                    if(response.contains("ATD"))
                     {
-                        if(response.contains(AT_OK) || response.contains(AT_ERROR))
+                        atResponseTimeout = AT_RESPONSE_TIMEOUT_ATD;
+                    }
+
+                    if(response.length() > 3)
+                    {
+                        if(response.contains(AT_START))
                         {
-                            received = true;
-                            result = response;
+                            if(response.contains(AT_OK) || response.contains(AT_ERROR) 
+                                    || response.contains(AT_NO_CARRIER)
+                                    || response.contains(AT_NO_DIALTONE)
+                                    || response.contains(AT_BUSY))
+                            {
+                                received = true;
+                                result = response;
+                            }
+                        }
+                        else if(response.endsWith("\r\n"))
+                        {
+                            if(response.contains(AT_OK))
+                            {
+                                received = true;
+                                result = response;
+                            }
+                            else
+                            {
+                                received = true;
+                                notifyAtEvent(response);
+                            }
                         }
                     }
-                    else if(response.endsWith("\r\n"))
+                }
+                else
+                {
+                    final long runtime = System.currentTimeMillis() - t1;
+                    if(runtime > atResponseTimeout)
                     {
-                        if(response.contains(AT_OK))
-                        {
-                            received = true;
-                            result = response;
-                        }
-                        else
-                        {
-                            received = true;
-                            notifyAtEvent(response);
-                        }
+                        throw new IOException("Response timeout waiting for OK or ERROR after "
+                                + runtime + " ms and: " + bos.toByteArray().length);
                     }
-                }
-            }
-            else
-            {
-                final long runtime = System.currentTimeMillis() - t1;
-                if(runtime > AT_RESPONSE_TIMEOUT)
-                {
-                    throw new IOException("Response timeout waiting for OK or ERROR after "
-                            + runtime + " ms and: " + bos.toByteArray().length);
-                }
-                try
-                {
-                    Thread.sleep(DEFAULT_SLEEP_MILLIS);
-                }
-                catch (final InterruptedException ex)
-                {
-                    LOG.error("Interrupt at receiving AT response", ex);
+                    try
+                    {
+                        Thread.sleep(DEFAULT_SLEEP_MILLIS);
+                    }
+                    catch (final InterruptedException ex)
+                    {
+                        LOG.error("Interrupt at receiving AT response", ex);
+                    }
                 }
             }
         }
-        
-        bos.close();
         
         return result;
     }

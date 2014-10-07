@@ -65,8 +65,8 @@
   </dependencies>
   
   <scm>
-      <connection>scm:svn:http://172.16.40.5/svn/12_0004/tags/REL-1.1.0</connection>
-      <developerConnection>scm:svn:http://172.16.40.5/svn/12_0004/tags/REL-1.1.0</developerConnection>
+      <connection>scm:svn:http://172.16.40.5/svn/12_0004/trunk</connection>
+      <developerConnection>scm:svn:http://172.16.40.5/svn/12_0004/trunk</developerConnection>
   </scm>
   
   <build>

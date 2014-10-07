@@ -3,7 +3,7 @@
 
   <groupId>de.sitec</groupId>
   <artifactId>jModuleConnect</artifactId>
-  <version>1.1.1-SNAPSHOT</version>
+  <version>1.1.1</version>
   <packaging>jar</packaging>
 
   <name>jModuleConnect</name>
@@ -65,8 +65,8 @@
   </dependencies>
   
   <scm>
-      <connection>scm:svn:http://172.16.40.5/svn/12_0004/branches/RB-1.1.1</connection>
-      <developerConnection>scm:svn:http://172.16.40.5/svn/12_0004/branches/RB-1.1.1</developerConnection>
+      <connection>scm:svn:http://172.16.40.5/svn/12_0004/tags/REL-1.1.1</connection>
+      <developerConnection>scm:svn:http://172.16.40.5/svn/12_0004/tags/REL-1.1.1</developerConnection>
   </scm>
   
   <build>

@@ -44,6 +44,7 @@ public class AtImpl implements At
     private final Lock lock = new ReentrantLock();
     private final Condition resonseAvailable = lock.newCondition();
     private boolean atMode;
+    private long lastCommandTime;
     
     private static final Logger LOG = LoggerFactory.getLogger(AtImpl.class);
     private static final byte DEFAULT_SLEEP_MILLIS = 10;
@@ -59,6 +60,7 @@ public class AtImpl implements At
     private static final String AT_NO_CARRIER = "NO CARRIER\r";
     private static final String AT_NO_DIALTONE = "NO DIALTONE\r";
     private static final String AT_BUSY = "BUSY\r";
+    private static final byte COMMAND_DELAY = 100;
 
     private AtImpl(final CommHandler commHandler)
     {
@@ -301,6 +303,21 @@ public class AtImpl implements At
         {
             LOG.debug("Send AT command: {}", atCommand);
             final String parameter = atCommand + "\r";
+            
+            final long currentDelay = System.currentTimeMillis() - lastCommandTime;
+            if(currentDelay < COMMAND_DELAY)
+            {
+                try
+                {
+                    Thread.sleep(COMMAND_DELAY - currentDelay);
+                }
+                catch (final InterruptedException ex)
+                {
+                    Thread.currentThread().interrupt();
+                    LOG.error("AT command delay was interrupted", ex);
+                }
+            }
+            
             commHandler.send(parameter.getBytes(BYTE_CHARSET));
             
             String response = null;
@@ -328,6 +345,8 @@ public class AtImpl implements At
             {
                 lock.unlock();
             }
+            
+            lastCommandTime = System.currentTimeMillis();
             
             if(response == null || response.contains(AT_ERROR))
             {

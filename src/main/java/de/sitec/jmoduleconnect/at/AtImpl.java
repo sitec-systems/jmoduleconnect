@@ -57,6 +57,7 @@ public class AtImpl implements At
     private static final String AT_START = "AT"; 
     private static final String AT_OK = "OK\r"; 
     private static final String AT_ERROR = "ERROR\r";
+    private static final String AT_CME_CMS_PATTERN = "(?s).*?\\+CM\\p{Upper} ERROR: .*\r.*";
     private static final String AT_NO_CARRIER = "NO CARRIER\r";
     private static final String AT_NO_DIALTONE = "NO DIALTONE\r";
     private static final String AT_BUSY = "BUSY\r";
@@ -81,6 +82,25 @@ public class AtImpl implements At
      */
     public static final At createAt(final CommHandler commHandler) throws AtCommandFailedException, IOException
     {
+        return createAt(commHandler, false);
+    }
+    
+    /**
+     * Creates an instance of this class.
+     * @param commHandler The communication handler
+     * @param errorCodes <code>true</code> - Enables error codes in {@link AtCommandFailedException}
+     *        / <code>false</code> - Displays error messages in {@link AtCommandFailedException}
+     *        instead of error codes
+     * @return The instance of this class
+     *  @throws AtCommandFailedException The response from device contains 
+     *         <code>ERROR</code>
+     * @throws IOException The communication to the device failed
+     * @throws IllegalArgumentException If the parameter commHandler <code>null</code>
+     * @since 1.2
+     */
+    public static final At createAt(final CommHandler commHandler, final boolean errorCodes) 
+            throws AtCommandFailedException, IOException
+    {
         if(commHandler == null)
         {
             throw new IllegalArgumentException("The parameter commHandler cant be null");
@@ -92,14 +112,18 @@ public class AtImpl implements At
         {
             at.send("ATE1");
             
+            if(errorCodes)
+            {
+                at.send("AT+CMEE=1");
+            }
+            else
+            {
+                at.send("AT+CMEE=2");
+            }
+            
             return at;
         }
         catch (final AtCommandFailedException ex)
-        {
-            at.close();
-            throw ex;
-        }
-        catch (final IOException ex)
         {
             at.close();
             throw ex;
@@ -334,6 +358,7 @@ public class AtImpl implements At
                     }
                     catch (final InterruptedException ex)
                     {
+                        Thread.currentThread().interrupt();
                         LOG.error("Interrupt at waiting for AT response", ex);
                     }
                     waitTrailsCount++;
@@ -348,10 +373,23 @@ public class AtImpl implements At
             
             lastCommandTime = System.currentTimeMillis();
             
-            if(response == null || response.contains(AT_ERROR))
+            if(response == null)
             {
-                throw new AtCommandFailedException("The AT command: " + atCommand
-                        + " failed");
+                throw new IOException("Response timeout");
+            }
+            else if(response.contains(AT_ERROR) || response.matches(AT_CME_CMS_PATTERN))
+            {
+                final String error;
+                if(response.matches(AT_CME_CMS_PATTERN))
+                {
+                    error = "AT command: " + atCommand + " deliver "
+                            + parseErrorDetails(response);
+                }
+                else
+                {
+                    error = "AT command: " + atCommand + " deliver Error";
+                }
+                throw new AtCommandFailedException(error);
             }
             
             LOG.debug("Response of AT command: {} is: {}", atCommand, response);
@@ -365,6 +403,19 @@ public class AtImpl implements At
             throw new IOException("Sending the AT command: " + atCommand 
                     + " failed", ex);
         }
+    }
+    
+    /**
+     * Parse a CME/CMS error code or CME/CMS error message from the input
+     * <code>String</code>.
+     * @param atResponse The <b>AT</b> response
+     * @return The parsed CME/CMS error code or CME/CMS error message
+     * @since 1.2
+     */
+    private static String parseErrorDetails(final String atResponse)
+    {
+        final int index = atResponse.indexOf(" ERROR: ") - 4;
+        return atResponse.substring(index, atResponse.lastIndexOf('\r'));
     }
     
     /**
@@ -418,7 +469,11 @@ public class AtImpl implements At
      * <td>Response of <code>+++</code></td>
      * </tr>
      * <tr>
-     * <td><code>AT ... OK/ERROR</code></td>
+     * <td><code>AT ... \r\nOK/ERROR</code></td>
+     * <td>Response of an AT command</td>
+     * </tr>
+     * <tr>
+     * <td><code>AT ... \r\n+CME ERROR: ...\r\n</code></td>
      * <td>Response of an AT command</td>
      * </tr>
      * </table>
@@ -456,7 +511,8 @@ public class AtImpl implements At
                     {
                         if(response.contains(AT_START))
                         {
-                            if(response.contains(AT_OK) || response.contains(AT_ERROR) 
+                            if(response.contains(AT_OK) || response.contains(AT_ERROR)
+                                    || response.matches(AT_CME_CMS_PATTERN)
                                     || response.contains(AT_NO_CARRIER)
                                     || response.contains(AT_NO_DIALTONE)
                                     || response.contains(AT_BUSY))

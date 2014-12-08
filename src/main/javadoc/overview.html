@@ -2,15 +2,16 @@
 <html>
     <body>
         <b>jModuleConnect</b> is an framework for communication and file management
-        on devices they are based on <b>Cinterion TC65 or EGS5</b>.
+        on modem modules.
         <p>
         </p>
         <p>
             The frameworks supports the AT command set for configuration and controlling
-            the modem and the OBEX protocol for access to flash filesystem. The 
-            adding of further protocol processsor is possible for device that
-            contains more components like the modem mcu.
+            modems and the OBEX protocol for access to flash filesystem. The 
+            adding of further protocol processsor is possible for devices the provides 
+            more then the AT command set on one port.
         </p>
+        <p>Optimized for <b>Cinterion TC65 or EGS5</b>.</p>
         
         <table border="1">
             <tr><th colspan="2">Dependencys</th></tr>
@@ -23,8 +24,58 @@
                 <td>Used for the Logging.</td>
             </tr>
         </table>
-        <ul>
-            <li><a href="#"></a>
-        </ul>
+        <p><b>Changelog</b></p>
+        <table border="1">
+            <tr>
+            <th>Version</th>
+            <th>Changes</th>
+            </tr>
+            <tr>
+            <td>1.2.0</td>
+            <td>
+                <ul>
+                    <li>
+                        <b>Features</b>
+                        <ul>
+                            <li>Support for CME/CMS error descriptions or error codes added. Adjustable with new factory method {@link de.sitec.jmoduleconnect.at.AtImpl#createAt(de.sitec.jmoduleconnect.CommHandler, boolean)}</li>
+                            <li>The interface {@link de.sitec.jmoduleconnect.at.At} extends now from interface {@link java.io.Closeable}</li>
+                        </ul>
+                    </li>
+                    <li>
+                        <b>Bugs</b>
+                        <ul>
+                            <li>An dynamic minimum delay between AT commands added</li>
+                        </ul>
+                    </li>
+                </ul>
+            </td>
+            </tr>
+            <tr>
+            <td>1.1.1</td>
+            <td>
+                <ul>
+                    <li>
+                        <b>Bugs</b>
+                        <ul>
+                            <li>ATD timeout problem fixed</li>
+                        </ul>
+                    </li>
+                </ul>
+            </td>
+            </tr>
+            <tr>
+            <td>1.1.0</td>
+            <td>
+                <ul>
+                    <li>
+                        <b>Features</b>
+                        <ul>
+                            <li>Framework for serial communication switched from <b>RxTx</b> to <b>RxTx rebundled</b></li>
+                        </ul>
+                    </li>
+                </ul>
+            </td>
+            </tr>
+        </table>
     </body>
 </html>

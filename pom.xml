@@ -155,5 +155,5 @@
           </distributionManagement>
       </profile>
   </profiles>
-
+    <description>jModuleConnect is an framework for communication and file management on modem modules.</description>
 </project>

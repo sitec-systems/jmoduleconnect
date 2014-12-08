@@ -18,6 +18,7 @@ package de.sitec.jmoduleconnect.at;
 
 import de.sitec.jmoduleconnect.file.ModuleFileManager;
 import de.sitec.jmoduleconnect.ProtocolParser;
+import java.io.Closeable;
 import java.io.IOException;
 
 /**
@@ -25,7 +26,7 @@ import java.io.IOException;
  * @author sitec systems GmbH
  * @since 1.0
  */
-public interface At extends ProtocolParser
+public interface At extends ProtocolParser, Closeable
 {
     /**
      * Adds an {@link AtListener}.
@@ -33,12 +34,6 @@ public interface At extends ProtocolParser
      * @since 1.0
      */
     void addAtListener(final AtListener atListener);
-    
-    /**
-     * Closes all resources.
-     * @since 1.0
-     */
-    void close();
     
     /**
      * Close an non AT mode on device with <code>+++</code>. The class 

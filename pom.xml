@@ -3,7 +3,7 @@
 
   <groupId>de.sitec</groupId>
   <artifactId>jModuleConnect</artifactId>
-  <version>1.2.1-SNAPSHOT</version>
+  <version>1.3.0-SNAPSHOT</version>
   <packaging>jar</packaging>
 
   <name>jModuleConnect</name>
@@ -53,9 +53,9 @@
           <scope>test</scope>
       </dependency>
       <dependency>
-          <groupId>de.root1</groupId>
-          <artifactId>rxtx-rebundled</artifactId>
-          <version>2.1-7r2-4</version>
+          <groupId>org.bidib.com.neuronrobotics</groupId>
+          <artifactId>nrjavaserial</artifactId>
+          <version>3.9.3.1</version>
       </dependency>
       <dependency>
           <groupId>org.slf4j</groupId>

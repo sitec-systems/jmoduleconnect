@@ -52,7 +52,9 @@ public interface FileManager
     void changeDirectory(final String pathname) throws IOException;
     
     /**
-     * Erase the complete flash filesystem on the device.
+     * Erase the complete flash filesystem on the device. <b>Caution:</b> The 
+     * operation will take a lot of time (many seconds) in dependency to the file 
+     * system size.
      * @throws IOException The communication to the device failed
      * @since 1.0
      */

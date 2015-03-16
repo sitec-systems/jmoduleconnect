@@ -66,6 +66,7 @@ public class ModuleFileManager implements FileManager, ProtocolParser
     private static final byte DEFAULT_SLEEP_MILLIS = 10;
     private static final short OBEX_RESPONSE_TIMEOUT = 5000;
     private static final byte WAIT_TIMEOUT = 2;
+    private static final byte WAIT_TIMEOUT_DELETE_ALL = 30;
     private static final byte WAIT_TRAILS = 3;
     private static final Charset BYTE_CHARSET = Charset.forName("ISO_8859_1");
     private static final Charset NAME_CHARSET = Charset.forName("UTF_16BE");
@@ -151,6 +152,7 @@ public class ModuleFileManager implements FileManager, ProtocolParser
     @Override
     public void parse(final InputStream is) throws IOException
     {
+        LOG.debug("Receive obex data");
         final Obex obexRespTemp = receiveObex(is);
         responseLock.lock();
         try
@@ -171,12 +173,25 @@ public class ModuleFileManager implements FileManager, ProtocolParser
     
     /**
      * Waits for OBEX response from device.
+     * @param waitForDeleteAll <code>true</code> - Wait longer for the {@link #deleteAll() }
+     *        operation / <code>false</code> - Wait default time for a reponse
      * @return The OBEX response
      * @throws IOException An error at receiving OBEX response
-     * @since 1.0
+     * @since 1.4
+     * @see #deleteAll() 
      */
-    private Obex receive() throws IOException
+    private Obex receive(final boolean waitForDeleteAll) throws IOException
     {
+        final byte waitTimeout;
+        if(waitForDeleteAll)
+        {
+            waitTimeout = WAIT_TIMEOUT_DELETE_ALL;
+        }
+        else
+        {
+            waitTimeout = WAIT_TIMEOUT;
+        }
+        
         Obex response = null;
         byte waitTrails = 0;
 
@@ -187,7 +202,7 @@ public class ModuleFileManager implements FileManager, ProtocolParser
             {
                 try
                 {
-                    responseAvailable.await(WAIT_TIMEOUT, TimeUnit.SECONDS);
+                    responseAvailable.await(waitTimeout, TimeUnit.SECONDS);
                 }
                 catch (final InterruptedException ex)
                 {
@@ -240,7 +255,7 @@ public class ModuleFileManager implements FileManager, ProtocolParser
             final Obex req = new Obex(Obex.Code.REQUEST_CONNECT, target);
 
             send(req);
-            final Obex response = receive();
+            final Obex response = receive(false);
             if(response.getObexCode() != Obex.Code.RESPONSE_SUCCESS)
             {
                 throw new IOException("Error response received: " + response.getObexCode()); 
@@ -295,7 +310,7 @@ public class ModuleFileManager implements FileManager, ProtocolParser
                 setRunning(false);
                 final Obex req = new Obex(Obex.Code.REQUEST_ABORT);
                 send(req);
-                final Obex response = receive();
+                final Obex response = receive(false);
 
                 if(response.getObexCode() != Obex.Code.RESPONSE_SUCCESS)
                 {
@@ -357,7 +372,7 @@ public class ModuleFileManager implements FileManager, ProtocolParser
         final Obex req = new Obex(Obex.Code.REQUEST_DISCONNECT);
         
         send(req);
-        final Obex response = receive();
+        final Obex response = receive(false);
         
         if(response.getObexCode() != Obex.Code.RESPONSE_SUCCESS)
         {
@@ -501,7 +516,7 @@ public class ModuleFileManager implements FileManager, ProtocolParser
         try
         {
             send(req);
-            final Obex response = receive();
+            final Obex response = receive(false);
             if(response.getObexCode() != Obex.Code.RESPONSE_SUCCESS)
             {
             throw new IOException("Error response received: " + response.getObexCode()); 
@@ -519,6 +534,7 @@ public class ModuleFileManager implements FileManager, ProtocolParser
     public void deleteAll() throws IOException
     {
         operationLock.lock();
+        LOG.debug("Start delete all");
         try
         {
             if(!obexMode) openObexMode();
@@ -529,13 +545,14 @@ public class ModuleFileManager implements FileManager, ProtocolParser
             final Obex req = new Obex(Obex.Code.REQUEST_PUT_FINAL, appParams);
 
             send(req);
-            final Obex response = receive();
+            final Obex response = receive(true);
             if(response.getObexCode() != Obex.Code.RESPONSE_SUCCESS)
             {
                 throw new IOException("Error response received at deleting all files: " + response.getObexCode()); 
             }
 
             readFileListing();
+            LOG.debug("Finish delete all");
         }
         finally
         {
@@ -618,7 +635,7 @@ public class ModuleFileManager implements FileManager, ProtocolParser
         try
         {
             send(req);
-            final Obex response = receive();
+            final Obex response = receive(false);
 
             if(response.getObexCode() != Obex.Code.RESPONSE_SUCCESS)
             {
@@ -660,7 +677,7 @@ public class ModuleFileManager implements FileManager, ProtocolParser
         {
             send(request);
 
-            response = receive();
+            response = receive(false);
 
             if(response.getObexCode() != Obex.Code.RESPONSE_CONTINUE &&
                     response.getObexCode() != Obex.Code.RESPONSE_SUCCESS)
@@ -696,7 +713,7 @@ public class ModuleFileManager implements FileManager, ProtocolParser
             try
             {
                 send(req);
-                response = receive();
+                response = receive(false);
 
                 if(response.getObexCode() != Obex.Code.RESPONSE_CONTINUE &&
                         response.getObexCode() != Obex.Code.RESPONSE_SUCCESS)
@@ -907,7 +924,7 @@ public class ModuleFileManager implements FileManager, ProtocolParser
             try
             {
                 send(req);
-                final Obex response = receive();
+                final Obex response = receive(false);
 
                 if(response.getObexCode() != Obex.Code.RESPONSE_SUCCESS)
                 {
@@ -941,7 +958,7 @@ public class ModuleFileManager implements FileManager, ProtocolParser
             try
             {
                 send(req);
-                final Obex response = receive();
+                final Obex response = receive(false);
                 if(response.getObexCode() != Obex.Code.RESPONSE_SUCCESS)
                 {
                     throw new IOException("Error response received: " + response.getObexCode()); 
@@ -1162,7 +1179,7 @@ public class ModuleFileManager implements FileManager, ProtocolParser
         try
         {
             send(req);
-            final Obex response = receive();
+            final Obex response = receive(false);
             if(response.getObexCode() != Obex.Code.RESPONSE_CONTINUE &&
                     response.getObexCode() != Obex.Code.RESPONSE_SUCCESS)
             {
@@ -1224,7 +1241,7 @@ public class ModuleFileManager implements FileManager, ProtocolParser
         try
         {
             send(req);
-            final Obex response = receive();
+            final Obex response = receive(false);
             if(response.getObexCode() != Obex.Code.RESPONSE_CONTINUE &&
                     response.getObexCode() != Obex.Code.RESPONSE_SUCCESS)
             {

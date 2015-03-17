@@ -24,6 +24,7 @@
  */
 package de.sitec.jmoduleconnect.file;
 
+import java.io.Closeable;
 import java.io.IOException;
 import java.io.InterruptedIOException;
 import java.util.Set;
@@ -34,7 +35,7 @@ import java.util.Set;
  * @author sitec systems GmbH
  * @since 1.0
  */
-public interface FileManager
+public interface FileManager extends Closeable
 {
     /**
      * Adds an {@link ProgressListener}.
@@ -83,13 +84,6 @@ public interface FileManager
      */
     void deleteFile(final String filename, final boolean filledFolder) 
             throws IOException;
-    
-    /**
-     * Closes all resources and switch back to AT mode
-     * @throws IOException The communication to the device failed
-     * @since 1.0
-     */
-    void close() throws IOException;
     
     /**
      * Gets the complete memory capacity of the flash filesystem. This dont means

@@ -24,6 +24,7 @@
  */
 package de.sitec.jmoduleconnect;
 
+import java.io.Closeable;
 import java.io.IOException;
 
 /**
@@ -31,7 +32,7 @@ import java.io.IOException;
  * @author sitec systems GmbH
  * @since 1.0
  */
-public interface CommHandler
+public interface CommHandler extends Closeable
 {
     /**
      * Adds an <code>ProtocolParser</code> to the <code>CommHandler</code>. This
@@ -40,13 +41,6 @@ public interface CommHandler
      * @since 1.0
      */
     void addProtocolParser(final ProtocolParser protocolParser);
-    
-    /**
-     * Closes the streams to the <code>SerialPort</code> and clean up.
-     * @throws IOException The communication to the device failed
-     * @since 1.0
-     */
-    void close() throws IOException;
     
     /**
      * Removes an <code>ProtocolParser</code> from the <code>CommHandler</code>.

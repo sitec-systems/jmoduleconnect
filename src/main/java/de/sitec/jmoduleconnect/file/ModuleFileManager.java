@@ -160,7 +160,6 @@ public class ModuleFileManager implements FileManager, ProtocolParser
     @Override
     public void parse(final InputStream is) throws IOException
     {
-        LOG.debug("Receive obex data");
         final Obex obexRespTemp = receiveObex(is);
         responseLock.lock();
         try

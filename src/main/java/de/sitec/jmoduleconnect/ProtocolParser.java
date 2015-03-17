@@ -1,4 +1,12 @@
 /**
+ * jModuleConnect is an framework for communication and file management on modem 
+ * modules.
+ * 
+ * This project was inspired by the project TC65SH 
+ * by Christoph Vilsmeier: <http://www.vilsmeier-consulting.de/tc65sh.html>
+ * 
+ * Copyright (C) 2015 sitec systems GmbH <http://www.sitec-systems.de>
+ * 
  * This file is part of jModuleConnect.
  * 
  * jModuleConnect is free software: you can redistribute it and/or modify it 

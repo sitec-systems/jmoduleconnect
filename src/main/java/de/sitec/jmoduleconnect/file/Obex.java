@@ -361,4 +361,39 @@ import java.util.*;
         
         return result;
     }
+
+    @Override
+    public String toString()
+    {
+        final StringBuilder sb = new StringBuilder("Obex{obexCode=");
+        sb.append(obexCode);
+        sb.append(", headers={");
+        boolean firstElement = true;
+        if(headers != null)
+        {
+            for(final ObexHeader obexHeader: headers.values())
+            {
+                if(firstElement)
+                {
+                    firstElement = false;
+                }
+                else
+                {
+                    sb.append(", ");
+                }
+                sb.append(obexHeader);
+            }
+        }
+        else
+        {
+            sb.append("null");
+        }
+        sb.append("}, flags=");
+        sb.append(BinaryUtils.toHexString(flags));
+        sb.append('}');
+        
+        return sb.toString();
+    }
+    
+    
 }

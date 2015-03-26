@@ -301,4 +301,51 @@ import org.slf4j.LoggerFactory;
         
         return result;
     }
+    
+    /**
+     * Gets the <code>String</code> representation of the data.
+     * @return The <code>String</code> representation of the data or <code>null</code>
+     *         if no data available
+     * @since 1.4
+     */
+    private String getDataString()
+    {
+        String result = null;
+        switch(obexCode)
+        {
+            case LENGTH:
+            case CONNECTION_ID:
+                result = ((Integer)data).toString();
+                break;
+            case WHO:
+            case TARGET:
+            case APP_PARAMETERS:
+            case BODY: 
+            case END_OF_BODY:
+                result = BinaryUtils.toHexString((byte[])data);
+                break;
+            case TYPE:
+            case NAME:
+                result = (String)data;
+                break;
+            case TIME:
+                result = ((Date)data).toString();
+                break;
+        }
+        
+        return result;
+    }
+
+    /** {@inheritDoc} */
+    @Override
+    public String toString()
+    {
+        final StringBuilder sb = new StringBuilder("ObexHeader{obexCode=");
+        sb.append(obexCode);
+        sb.append(", data=");
+        sb.append(getDataString());
+        sb.append('}');
+        
+        return sb.toString();
+    }
 }

@@ -187,4 +187,24 @@ public class FileMeta implements Comparable<FileMeta>
         
         return result;
     }
+
+    @Override
+    public String toString()
+    {
+        final StringBuilder sb = new StringBuilder("FileMeta{name=");
+        sb.append(name);
+        sb.append(", lastModified=");
+        sb.append(lastModified);
+        sb.append(", directory=");
+        sb.append(directory);
+        sb.append(", size=");
+        sb.append(size);
+        sb.append(", parentDirectory=");
+        sb.append(parentDirectory);
+        sb.append('}');
+        
+        return sb.toString();
+    }
+    
+    
 }

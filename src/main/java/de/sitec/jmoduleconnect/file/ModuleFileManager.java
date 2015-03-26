@@ -175,6 +175,8 @@ public class ModuleFileManager implements FileManager, ProtocolParser
     
     private void send(final Obex request) throws IOException
     {
+        LOG.trace("OBEX send - RAW: {}", BinaryUtils.toHexString(request.toByteArray()));
+        LOG.debug("OBEX send: {}", request);
         commHandler.send(request.toByteArray());
     }
     
@@ -229,6 +231,9 @@ public class ModuleFileManager implements FileManager, ProtocolParser
         {
             throw new IOException("No OBEX response after receiving");
         }
+        
+        LOG.trace("OBEX receive - RAW: {}", BinaryUtils.toHexString(response.toByteArray()));
+        LOG.debug("OBEX receive: {}", response);
         
         return response;
     }
@@ -885,6 +890,8 @@ public class ModuleFileManager implements FileManager, ProtocolParser
 
         final byte[] body = processObexMultipart(req, null);
         final String xml = new String(body, BYTE_CHARSET);
+        
+        LOG.trace("FileListing - XML: {}", xml);
 
         try
         {

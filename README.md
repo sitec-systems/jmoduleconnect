@@ -1,1 +1,3 @@
-## projekte/12_0004/scm_12_0004
+# jModuleConnect
+
+documentation is available on overview page of javadoc

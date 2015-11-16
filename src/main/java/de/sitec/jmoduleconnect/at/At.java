@@ -22,6 +22,10 @@
  * You should have received a copy of the GNU Lesser General Public License
  * along with jModuleConnect. If not, see <http://www.gnu.org/licenses/>.
  */
+/*
+ * Author: Mattes Standfuss
+ * Copyright (c): sitec systems GmbH, 2015
+ */
 package de.sitec.jmoduleconnect.at;
 
 import de.sitec.jmoduleconnect.file.ModuleFileManager;

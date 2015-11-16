@@ -25,6 +25,7 @@
 package de.sitec.jmoduleconnect.at;
 
 import de.sitec.jmoduleconnect.CommHandler;
+import de.sitec.jmoduleconnect.at.AtCommandFailedException.Type;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -48,6 +49,7 @@ public class AtImpl implements At
     private final CommHandler commHandler;
     private final AtEventNotifier eventNotifier;
     private final Thread eventNotifierThread;
+    private final boolean errorCodes;
     private String atResponse;
     private final Lock lock = new ReentrantLock();
     private final Condition resonseAvailable = lock.newCondition();
@@ -65,15 +67,17 @@ public class AtImpl implements At
     private static final String AT_START = "AT"; 
     private static final String AT_OK = "OK\r"; 
     private static final String AT_ERROR = "ERROR\r";
+    private static final String AT_CME_CMS_INDICATOR = " ERROR: ";
     private static final String AT_CME_CMS_PATTERN = "(?s).*?\\+CM\\p{Upper} ERROR: .*\r.*";
     private static final String AT_NO_CARRIER = "NO CARRIER\r";
     private static final String AT_NO_DIALTONE = "NO DIALTONE\r";
     private static final String AT_BUSY = "BUSY\r";
     private static final byte COMMAND_DELAY = 100;
 
-    private AtImpl(final CommHandler commHandler)
+    private AtImpl(final CommHandler commHandler, final boolean errorCodes)
     {
         this.commHandler = commHandler;
+        this.errorCodes = errorCodes;
         eventNotifier = new AtEventNotifier();
         eventNotifierThread = new Thread(eventNotifier);
     }
@@ -114,19 +118,19 @@ public class AtImpl implements At
             throw new IllegalArgumentException("The parameter commHandler cant be null");
         }
         
-        final AtImpl at = new AtImpl(commHandler);
+        final AtImpl at = new AtImpl(commHandler, errorCodes);
         at.init();
         try
         {
-            at.send("ATE1");
+            at.send("ATE1", false);
             
             if(errorCodes)
             {
-                at.send("AT+CMEE=1");
+                at.send("AT+CMEE=1", false);
             }
             else
             {
-                at.send("AT+CMEE=2");
+                at.send("AT+CMEE=2", false);
             }
             
             return at;
@@ -268,6 +272,25 @@ public class AtImpl implements At
     @Override
     public String send(final String atCommand) 
             throws AtCommandFailedException, IOException
+    {  
+        return send(atCommand, true);
+    }
+    
+    /**
+     * Sends an AT command and gets the response. The check of <code>AT+CMEE=</code>
+     * can be enabled or disabled. This can prevents against a change of error 
+     * mode.
+     * @param atCommand The AT command
+     * @param cmeeCheck <code>true</code> - Throws an {@link IllegalArgumentException}
+     *        if the command contains <code>AT+CMEE=</code> | <code>false</code> 
+     *        - Does not check for <code>AT+CMEE=</code> in the input command
+     * @return The response of the AT command
+     * @throws AtCommandFailedException The AT command has failed
+     * @throws IOException The communication to modem has failed
+     * @since 1.4
+     */
+    private String send(final String atCommand, final boolean cmeeCheck) 
+            throws AtCommandFailedException, IOException
     {   
         if(!atMode)
         {
@@ -277,6 +300,11 @@ public class AtImpl implements At
         if(atCommand == null)
         {
             throw new IllegalArgumentException("Parameter atCommand cant be null");
+        }
+        
+        if(cmeeCheck && atCommand.toUpperCase().contains("AT+CMEE="))
+        {
+            throw new IllegalArgumentException("The AT command 'AT+CMEE=' is not allowed");
         }
         
         final String atConv = atCommand.toUpperCase();
@@ -298,7 +326,8 @@ public class AtImpl implements At
             }
             catch(final AtCommandFailedException ex)
             {
-                throw new AtCommandFailedException("The sending of ATD has failed", ex);
+                throw new AtCommandFailedException(ex.getType()
+                        , "The sending of ATD has failed", ex);
             }
             catch(final IOException ex)
             {
@@ -387,17 +416,29 @@ public class AtImpl implements At
             }
             else if(response.contains(AT_ERROR) || response.matches(AT_CME_CMS_PATTERN))
             {
-                final String error;
                 if(response.matches(AT_CME_CMS_PATTERN))
                 {
-                    error = "AT command: " + atCommand + " deliver "
-                            + parseErrorDetails(response);
+                    final String errorDetails = parseErrorDetails(response);
+                    final Type type = errorDetails.contains("CME") ? Type.CME : Type.CMS;
+                    final String error = "AT command: " + atCommand + " deliver "
+                            + errorDetails;
+                    if(errorCodes)
+                    {
+                        final int errorCodeStartIndex = errorDetails.indexOf(AT_CME_CMS_INDICATOR) 
+                                + AT_CME_CMS_INDICATOR.length();
+                        final short errorCode = Short.parseShort(errorDetails.substring(errorCodeStartIndex));
+                        throw new AtCommandFailedException(type, errorCode, error);
+                    }
+                    else
+                    {
+                        throw new AtCommandFailedException(type, error);
+                    }
                 }
                 else
                 {
-                    error = "AT command: " + atCommand + " deliver Error";
+                    final String error = "AT command: " + atCommand + " deliver Error";
+                    throw new AtCommandFailedException(Type.ERROR, error);
                 }
-                throw new AtCommandFailedException(error);
             }
             
             LOG.debug("Response of AT command: {} is: {}", atCommand, response);
@@ -422,7 +463,7 @@ public class AtImpl implements At
      */
     private static String parseErrorDetails(final String atResponse)
     {
-        final int index = atResponse.indexOf(" ERROR: ") - 4;
+        final int index = atResponse.indexOf(AT_CME_CMS_INDICATOR) - 4;
         return atResponse.substring(index, atResponse.lastIndexOf('\r'));
     }
     

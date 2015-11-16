@@ -31,33 +31,162 @@ package de.sitec.jmoduleconnect.at;
  */
 public class AtCommandFailedException extends Exception
 {
+    private final Type type;
+    private final short errorCode;
+    
+    /**
+     * Indicates that the error code mode is off.
+     * @since 1.4
+     */
+    private static final short ERROR_CODE_MODE_OFF = -32768;
+    
     /**
      * Constructs an <code>AtCommandFailedException</code> with no
      * detail message.
-     * @since 1.0
+     * @param type The type of the AT error
+     * @since 1.4
      */
-    public AtCommandFailedException(){};
+    public AtCommandFailedException(final Type type)
+    {
+        super();
+        this.type = type;
+        errorCode = ERROR_CODE_MODE_OFF;
+    }
 
     /**
      * Constructs an <code>AtCommandFailedException</code> with the
      * specified detail message.
-     * @param s The detail message
-     * @since 1.0
+     * @param type The type of the AT error
+     * @param message The detail message
+     * @since 1.4
      */
-    public AtCommandFailedException(final String s)
+    public AtCommandFailedException(final Type type, final String message)
     {
-        super(s);
+        super(message);
+        this.type = type;
+        errorCode = ERROR_CODE_MODE_OFF;
+    }
+
+    /**
+     * Constructs an <code>AtCommandFailedException</code> and takes an other 
+     * <code>Throwable</code>.
+     * @param type The type of the AT error
+     * @param cause The other throwable
+     * @since 1.4
+     */
+    public AtCommandFailedException(final Type type, final Throwable cause)
+    {
+        super(cause);
+        this.type = type;
+        errorCode = ERROR_CODE_MODE_OFF;
     }
     
     /**
      * Constructs an <code>AtCommandFailedException</code> with the
      * specified detail message and takes an other <code>Throwable</code>.
-     * @param s The detail message
+     * @param type The type of the AT error
+     * @param message  The detail message
+     * @param cause The other throwable
+     * @since 1.4
+     */
+    public AtCommandFailedException(final Type type, final String message
+            , final Throwable cause)
+    {
+        super(message, cause);
+        this.type = type;
+        errorCode = ERROR_CODE_MODE_OFF;
+    }
+
+    /**
+     * Constructs an <code>AtCommandFailedException</code> with no
+     * detail message.
+     * @param type The type of the AT error
+     * @param errorCode The error code of the AT command
+     * @since 1.4
+     */
+    public AtCommandFailedException(final Type type, final short errorCode)
+    {
+        this.type = type;
+        this.errorCode = errorCode;
+    }
+
+    /**
+     * Constructs an <code>AtCommandFailedException</code> with the
+     * specified detail message.
+     * @param type The type of the AT error
+     * @param errorCode The error code of the AT command
+     * @param message  The detail message
+     * @since 1.4
+     */
+    public AtCommandFailedException(final Type type, final short errorCode
+            , final String message)
+    {
+        super(message);
+        this.type = type;
+        this.errorCode = errorCode;
+    }
+
+    /**
+     * Constructs an <code>AtCommandFailedException</code> with the
+     * specified detail message and takes an other <code>Throwable</code>.
+     * @param type The type of the AT error
+     * @param errorCode The error code of the AT command
+     * @param message  The detail message
      * @param cause The other throwable
      * @since 1.0
      */
-    public AtCommandFailedException(final String s, final Throwable cause)
+    public AtCommandFailedException(final Type type, final short errorCode
+            , final String message, final Throwable cause)
     {
-        super(s, cause);
+        super(message, cause);
+        this.type = type;
+        this.errorCode = errorCode;
+    }
+
+    /**
+     * Constructs an <code>AtCommandFailedException</code> and takes an other 
+     * <code>Throwable</code>.
+     * @param type The type of the AT error
+     * @param errorCode The error code of the AT command
+     * @param cause The other throwable
+     * @since 1.4
+     */
+    public AtCommandFailedException(final Type type, final short errorCode
+            , final Throwable cause)
+    {
+        super(cause);
+        this.type = type;
+        this.errorCode = errorCode;
+    }
+    
+    /**
+     * Gets the type of the AT error.
+     * @return The type of the AT error
+     * @since 1.4
+     */
+    public Type getType()
+    {
+        return type;
+    }
+
+    /**
+     * Gets the error code of an AT command. If error code mode off then delivers
+     * {@link #ERROR_CODE_MODE_OFF}.
+     * @return The error code of an AT command
+     * @since 1.4
+     * @see #ERROR_CODE_MODE_OFF
+     */
+    public short getErrorCode()
+    {
+        return errorCode;
+    }
+    
+    /**
+     * Enum for AT error types.
+     * @since 1.4
+     */
+    public static enum Type
+    {
+        ERROR, CMS, CME;
     }
 }

@@ -132,6 +132,11 @@
                 </archive>
             </configuration>
         </plugin>
+        <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <version>2.5.3</version>
+            <artifactId>maven-release-plugin</artifactId>
+        </plugin>
       </plugins>
   </build>
 

@@ -3,7 +3,7 @@
 
   <groupId>de.sitec</groupId>
   <artifactId>jModuleConnect</artifactId>
-  <version>1.4.1</version>
+  <version>1.4.2-SNAPSHOT</version>
   <packaging>jar</packaging>
 
   <name>jModuleConnect</name>
@@ -31,7 +31,7 @@
   <scm>
       <connection>scm:git:https://${server.ip}/redmine/projekte/12_0004/scm_12_0004.git</connection>
       <developerConnection>scm:git:https://${server.ip}/redmine/projekte/12_0004/scm_12_0004.git</developerConnection>
-    <tag>REL-1.4.1</tag>
+    <tag>HEAD</tag>
   </scm>
 
   <dependencies>

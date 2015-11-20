@@ -449,7 +449,7 @@ public class AtImpl implements At
             
             checkModeChange(atCommand);
             
-            return removeEcho(atCommand, response);
+            return removeEcho(atCommand, response).trim();
         }
         catch (final IOException ex)
         {

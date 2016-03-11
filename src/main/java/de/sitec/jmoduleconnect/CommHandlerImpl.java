@@ -28,6 +28,7 @@
  */
 package de.sitec.jmoduleconnect;
 
+import de.sitec.jmoduleconnect.utils.BinaryUtils;
 import gnu.io.CommPort;
 import gnu.io.CommPortIdentifier;
 import gnu.io.PortInUseException;
@@ -252,15 +253,23 @@ public class CommHandlerImpl implements CommHandler
 //                System.out.println("SerialPortEvent - " + Thread.currentThread().getId());
                 try
                 {
-//                    final byte firstByte = (byte)serialIn.read();
-//                    System.out.println("FirstByte (FAC) " + Thread.currentThread().getName() + " : " + Integer.toHexString(firstByte));
-                    for(final ProtocolParser protocolParser: protocolParserList)
+                    while(serialIn.available() > 0)
                     {
-                        if(protocolParser.isProtocol(serialIn))
+                        boolean parsed = false;
+                        for(final ProtocolParser protocolParser: protocolParserList)
                         {
-//                            System.out.println("Protocol");
-                            protocolParser.parse(serialIn);
-                            break;
+                            if(protocolParser.isProtocol(serialIn))
+                            {
+                                protocolParser.parse(serialIn);
+                                parsed = true;
+                                break;
+                            }
+                        }
+                        
+                        if(!parsed)
+                        {
+                           serialIn.skip(1);
+                           serialIn.mark(0);
                         }
                     }
                 }

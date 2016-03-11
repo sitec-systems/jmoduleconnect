@@ -38,6 +38,8 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -68,14 +70,20 @@ public class AtImpl implements At
     private static final byte WAIT_TRAILS = 3;
     private static final byte WAIT_TRAILS_ATD = 90;
     private static final Charset BYTE_CHARSET = Charset.forName("ISO_8859_1");
-    private static final String AT_START = "AT"; 
-    private static final String AT_OK = "OK\r"; 
-    private static final String AT_ERROR = "ERROR\r";
+    private static final String CR_LF = "\r\n";
+    private static final String AT_START = "AT";
+    private static final String AT_ERROR = "ERROR" + CR_LF;
     private static final String AT_CME_CMS_INDICATOR = " ERROR: ";
-    private static final String AT_CME_CMS_PATTERN = "(?s).*?\\+CM\\p{Upper} ERROR: .*\r.*";
-    private static final String AT_NO_CARRIER = "NO CARRIER\r";
-    private static final String AT_NO_DIALTONE = "NO DIALTONE\r";
-    private static final String AT_BUSY = "BUSY\r";
+    private static final Pattern AT_CME_CMS_PATTERN =  Pattern.compile(Pattern.quote("+") 
+            + "CM\\p{Upper} ERROR: .*");
+    private static final Pattern AT_EVENT_PATTERN = Pattern.compile("\\A(?!AT.*\\r)" 
+            + CR_LF + Pattern.quote("+") + ".+" + CR_LF + "(?!" + CR_LF + "OK" 
+            + ")");
+    private static final Pattern AT_PATTERN = Pattern.compile("(\\AAT.*\r.*" 
+            + CR_LF + "(OK|ERROR|NO CARRIER|NO DIALTONE|BUSY|" + Pattern.quote("+") 
+            + "CM(E|S) ERROR: .*)" + CR_LF +")" 
+            + "|" + "(\\A(?!AT.*\\r)" + CR_LF + ".+" + CR_LF + "(" + CR_LF + "OK" 
+            + ")?)", Pattern.DOTALL);
     private static final byte COMMAND_DELAY = 100;
 
     private AtImpl(final CommHandler commHandler, final boolean errorCodes)
@@ -96,7 +104,8 @@ public class AtImpl implements At
      * @throws IllegalArgumentException If the parameter commHandler <code>null</code>
      * @since 1.0
      */
-    public static final At createAt(final CommHandler commHandler) throws AtCommandFailedException, IOException
+    public static final At createAt(final CommHandler commHandler) 
+            throws AtCommandFailedException, IOException
     {
         return createAt(commHandler, false);
     }
@@ -114,8 +123,8 @@ public class AtImpl implements At
      * @throws IllegalArgumentException If the parameter commHandler <code>null</code>
      * @since 1.2
      */
-    public static final At createAt(final CommHandler commHandler, final boolean errorCodes) 
-            throws AtCommandFailedException, IOException
+    public static final At createAt(final CommHandler commHandler
+            , final boolean errorCodes) throws AtCommandFailedException, IOException
     {
         if(commHandler == null)
         {
@@ -244,7 +253,7 @@ public class AtImpl implements At
         is.read(buffer);
         is.reset();
         final String result = new String(buffer, BYTE_CHARSET);
-        return result.contains(AT_START) || result.contains("\r\n");
+        return result.contains(AT_START) || result.matches(CR_LF);
     }
     
     /** {@inheritDoc } */
@@ -366,7 +375,6 @@ public class AtImpl implements At
         
         try
         {
-            LOG.debug("Send AT command: {}", atCommand);
             final String parameter = atCommand + "\r";
             
             final long currentDelay = System.currentTimeMillis() - lastCommandTime;
@@ -382,6 +390,8 @@ public class AtImpl implements At
                     LOG.error("AT command delay was interrupted", ex);
                 }
             }
+            
+            LOG.debug("Send AT command: {}", atCommand);
             
             commHandler.send(parameter.getBytes(BYTE_CHARSET));
             
@@ -418,11 +428,13 @@ public class AtImpl implements At
             {
                 throw new IOException("Response timeout");
             }
-            else if(response.contains(AT_ERROR) || response.matches(AT_CME_CMS_PATTERN))
+            else if(response.contains(AT_ERROR) 
+                    || AT_CME_CMS_PATTERN.matcher(response).find())
             {
-                if(response.matches(AT_CME_CMS_PATTERN))
+                final Matcher errorMatcher = AT_CME_CMS_PATTERN.matcher(response);
+                if(errorMatcher.find())
                 {
-                    final String errorDetails = parseErrorDetails(response);
+                    final String errorDetails = errorMatcher.group();
                     final Type type = errorDetails.contains("CME") ? Type.CME : Type.CMS;
                     final String error = "AT command: " + atCommand + " deliver "
                             + errorDetails;
@@ -438,7 +450,7 @@ public class AtImpl implements At
                         throw new AtCommandFailedException(type, error);
                     }
                 }
-                else
+                else if(response.contains(AT_ERROR))
                 {
                     final String error = "AT command: " + atCommand + " deliver Error";
                     throw new AtCommandFailedException(Type.ERROR, error);
@@ -456,19 +468,6 @@ public class AtImpl implements At
             throw new IOException("Sending the AT command: " + atCommand 
                     + " failed", ex);
         }
-    }
-    
-    /**
-     * Parse a CME/CMS error code or CME/CMS error message from the input
-     * <code>String</code>.
-     * @param atResponse The <b>AT</b> response
-     * @return The parsed CME/CMS error code or CME/CMS error message
-     * @since 1.2
-     */
-    private static String parseErrorDetails(final String atResponse)
-    {
-        final int index = atResponse.indexOf(AT_CME_CMS_INDICATOR) - 4;
-        return atResponse.substring(index, atResponse.lastIndexOf('\r'));
     }
     
     /**
@@ -514,19 +513,19 @@ public class AtImpl implements At
      * <th>Interpretation</th>
      * </tr>
      * <tr>
-     * <td><code>\r\n text\r\n</code></td>
+     * <td><code>\r\n...\r\n</code></td>
      * <td>Event</td>
      * </tr>
      * <tr>
-     * <td><code>\r\n OK\r\n</code></td>
+     * <td><code>\r\nOK\r\n</code></td>
      * <td>Response of <code>+++</code></td>
      * </tr>
      * <tr>
-     * <td><code>AT ... \r\nOK/ERROR</code></td>
+     * <td><code>AT...\r...\r\nOK|ERROR|BUSY|+CME ERROR|+CMS ERROR\r\n</code></td>
      * <td>Response of an AT command</td>
      * </tr>
      * <tr>
-     * <td><code>AT ... \r\n+CME ERROR: ...\r\n</code></td>
+     * <td><code>\r\n...\r\nOK|ERROR|BUSY|+CME ERROR|+CMS ERROR\r\n</code></td>
      * <td>Response of an AT command</td>
      * </tr>
      * </table>
@@ -538,54 +537,51 @@ public class AtImpl implements At
     private String receiveAtResponse(final InputStream serialIn) throws IOException
     {
         final long t1 = System.currentTimeMillis();
-        final byte[] buf = new byte[512];
         String result = null;
         
+        serialIn.mark(0);
         try(final ByteArrayOutputStream bos = new ByteArrayOutputStream())
         {
-            boolean received = false;
             int atResponseTimeout = AT_RESPONSE_TIMEOUT;
 
-            while(!received)
+            while(!Thread.currentThread().isInterrupted())
             {
-                if(serialIn.available() > 0) 
+                final byte[] buf = new byte[serialIn.available()];
+                if(buf.length > 0) 
                 {
-                    final int readCount = serialIn.read(buf);
-                    bos.write(buf, 0, readCount);
+                    serialIn.read(buf);
+                    bos.write(buf);
 
                     final String response = new String(bos.toByteArray(), BYTE_CHARSET);
 
-                    if(response.contains("ATD"))
+                    if(response.startsWith("ATD"))
                     {
                         atResponseTimeout = AT_RESPONSE_TIMEOUT_ATD;
                     }
 
                     if(response.length() > 3)
                     {
-                        if(response.contains(AT_START))
+                        final Matcher atMatcher = AT_PATTERN.matcher(response);
+                        if(atMatcher.find())
                         {
-                            if(response.contains(AT_OK) || response.contains(AT_ERROR)
-                                    || response.matches(AT_CME_CMS_PATTERN)
-                                    || response.contains(AT_NO_CARRIER)
-                                    || response.contains(AT_NO_DIALTONE)
-                                    || response.contains(AT_BUSY))
+                            final String atMatch = atMatcher.group();
+                            final Matcher atEventMatcher = AT_EVENT_PATTERN.matcher(atMatch);
+                            if(atEventMatcher.find())
                             {
-                                received = true;
-                                result = response;
-                            }
-                        }
-                        else if(response.endsWith("\r\n"))
-                        {
-                            if(response.contains(AT_OK))
-                            {
-                                received = true;
-                                result = response;
+                                notifyAtEvent(atMatch);
                             }
                             else
                             {
-                                received = true;
-                                notifyAtEvent(response);
+                                result = atMatch;
                             }
+                            
+                            // Necessary to get only the needed data from stream
+                            // without loose the following data
+                            serialIn.reset();
+                            serialIn.skip(atMatch.length());
+                            serialIn.mark(0);
+                            
+                            break;
                         }
                     }
                 }
@@ -603,7 +599,7 @@ public class AtImpl implements At
                     }
                     catch (final InterruptedException ex)
                     {
-                        LOG.error("Interrupt at receiving AT response", ex);
+                        LOG.debug("Interrupt at receiving AT response", ex);
                     }
                 }
             }

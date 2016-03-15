@@ -1282,7 +1282,7 @@ public class ModuleFileManager implements FileManager, ProtocolParser
      */
     private Obex receiveObex(final InputStream serialIn) throws IOException
     {
-        final long t1 = System.currentTimeMillis();
+        final long t1 = System.nanoTime();
         final byte[] buffer = new byte[512];
         boolean received = false;
         Obex result = null;
@@ -1316,10 +1316,11 @@ public class ModuleFileManager implements FileManager, ProtocolParser
             }
             else
             {
-                final long runtime = System.currentTimeMillis() - t1;
+                final long runtime = System.nanoTime() - t1;
                 if(runtime > OBEX_RESPONSE_TIMEOUT)
                 {
-                    throw new IOException("Response timeout "+ runtime + " ms and: " 
+                    throw new IOException("Response timeout "
+                            + TimeUnit.NANOSECONDS.toMillis(runtime) + " ms and: " 
                             + responseBuffer.toByteArray().length);
                 }
                 try

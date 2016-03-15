@@ -84,7 +84,7 @@ public class AtImpl implements At
             + "CM(E|S) ERROR: .*)" + CR_LF +")" 
             + "|" + "(\\A(?!AT.*\\r)" + CR_LF + ".+" + CR_LF + "(" + CR_LF + "OK" 
             + ")?)", Pattern.DOTALL);
-    private static final byte COMMAND_DELAY = 100;
+    private static final long COMMAND_DELAY = TimeUnit.MILLISECONDS.toNanos(100);
 
     private AtImpl(final CommHandler commHandler, final boolean errorCodes)
     {
@@ -377,7 +377,7 @@ public class AtImpl implements At
         {
             final String parameter = atCommand + "\r";
             
-            final long currentDelay = System.currentTimeMillis() - lastCommandTime;
+            final long currentDelay = System.nanoTime() - lastCommandTime;
             if(currentDelay < COMMAND_DELAY)
             {
                 try
@@ -422,7 +422,7 @@ public class AtImpl implements At
                 lock.unlock();
             }
             
-            lastCommandTime = System.currentTimeMillis();
+            lastCommandTime = System.nanoTime();
             
             if(response == null)
             {
@@ -536,7 +536,7 @@ public class AtImpl implements At
      */
     private String receiveAtResponse(final InputStream serialIn) throws IOException
     {
-        final long t1 = System.currentTimeMillis();
+        final long t1 = System.nanoTime();
         String result = null;
         
         serialIn.mark(0);
@@ -553,6 +553,8 @@ public class AtImpl implements At
                     bos.write(buf);
 
                     final String response = new String(bos.toByteArray(), BYTE_CHARSET);
+                    
+                    LOG.debug("READED: {}", response);
 
                     if(response.startsWith("ATD"))
                     {
@@ -587,11 +589,12 @@ public class AtImpl implements At
                 }
                 else
                 {
-                    final long runtime = System.currentTimeMillis() - t1;
+                    final long runtime = System.nanoTime() - t1;
                     if(runtime > atResponseTimeout)
                     {
                         throw new IOException("Response timeout waiting for OK or ERROR after "
-                                + runtime + " ms and: " + bos.toByteArray().length);
+                                + TimeUnit.NANOSECONDS.toMillis(runtime) 
+                                + " ms and: " + bos.toByteArray().length);
                     }
                     try
                     {

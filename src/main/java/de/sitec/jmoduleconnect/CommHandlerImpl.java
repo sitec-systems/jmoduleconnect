@@ -28,7 +28,6 @@
  */
 package de.sitec.jmoduleconnect;
 
-import de.sitec.jmoduleconnect.utils.BinaryUtils;
 import gnu.io.CommPort;
 import gnu.io.CommPortIdentifier;
 import gnu.io.PortInUseException;
@@ -41,6 +40,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.ArrayList;
+import java.util.EnumSet;
 import java.util.List;
 import java.util.TooManyListenersException;
 import org.slf4j.Logger;
@@ -75,11 +75,11 @@ public class CommHandlerImpl implements CommHandler
 
     private CommHandlerImpl()
     {
-        protocolParserList = new ArrayList<ProtocolParser>();
+        protocolParserList = new ArrayList<>();
     }
     
     /**
-     * Creates an instance of this class.
+     * Creates an instance of this class. Enables flow control mode RTC and CTS.
      * @param commPortIdentifier Must point to an serial port
      * @param baudrate The baudrate of the communication. The baudrate must be 
      *        setted with <code>AT+IPR=*baudrate*</code>. The default baudrate
@@ -90,32 +90,51 @@ public class CommHandlerImpl implements CommHandler
      * @throws IllegalArgumentException If parameter commPortIdentifier is 
      *         <code>null</code> or the result of {@link CommPortIdentifier#open(java.lang.String, int) } 
      *         is not an instance of {@link SerialPort}.
-     * @since 1.0
+     * @since 1.0 
      */
     public static final CommHandler createCommHandler(final CommPortIdentifier commPortIdentifier
             , final int baudrate) 
+            throws PortInUseException, IOException
+    {
+        return createCommHandler(commPortIdentifier, baudrate
+                , EnumSet.of(FlowControlMode.RTSCTS_IN, FlowControlMode.RTSCTS_OUT));
+    }
+    
+    /**
+     * Creates an instance of this class.
+     * @param commPortIdentifier Must point to an serial port
+     * @param baudrate The baudrate of the communication. The baudrate must be 
+     *        setted with <code>AT+IPR=*baudrate*</code>. The default baudrate
+     *        of an device is <code>115200</code>
+     * @param flowControlMode The flow control mode of the serial port
+     * @return An instance of <code>CommHandlerImpl</code>
+     * @throws PortInUseException The selected port is used by another application
+     * @throws IOException The communication to the device failed
+     * @throws IllegalArgumentException If parameter commPortIdentifier is 
+     *         <code>null</code> or the result of {@link CommPortIdentifier#open(java.lang.String, int) } 
+     *         is not an instance of {@link SerialPort}.
+     * @since 1.5
+     */
+    public static final CommHandler createCommHandler(final CommPortIdentifier commPortIdentifier
+            , final int baudrate, final EnumSet<FlowControlMode> flowControlMode) 
             throws PortInUseException, IOException
     {
         final CommHandlerImpl commHandler = new CommHandlerImpl();
             
         try
         {
-            commHandler.init(commPortIdentifier, baudrate);
+            commHandler.init(commPortIdentifier, baudrate, flowControlMode);
             return commHandler;
         }
-        catch (final PortInUseException ex)
-        {
-            commHandler.close();
-            throw ex;
-        }
-        catch (final IOException ex)
+        catch (final PortInUseException | IOException ex)
         {
             commHandler.close();
             throw ex;
         }
     }
     
-    private void init(final CommPortIdentifier commPortIdentifier, final int baudrate) 
+    private void init(final CommPortIdentifier commPortIdentifier, final int baudrate
+            , final EnumSet<FlowControlMode> flowControlMode) 
             throws IOException, PortInUseException
     {
         if(commPortIdentifier == null)
@@ -135,8 +154,7 @@ public class CommHandlerImpl implements CommHandler
             serialPort.setSerialPortParams(baudrate, SerialPort.DATABITS_8
                     , SerialPort.STOPBITS_1, SerialPort.PARITY_NONE);
             serialPort.enableReceiveTimeout(2000);
-            serialPort.setFlowControlMode(SerialPort.FLOWCONTROL_RTSCTS_OUT 
-                    | SerialPort.FLOWCONTROL_RTSCTS_IN);
+            serialPort.setFlowControlMode(FlowControlMode.getValue(flowControlMode));
         }
         catch (final UnsupportedCommOperationException ex)
         {
@@ -278,6 +296,46 @@ public class CommHandlerImpl implements CommHandler
                     LOG.error("Error at receiving data", ex);
                 }
             }
+        }
+    }
+    
+    /**
+     * An enumeration for flow control mode.
+     * @since 1.5
+     */
+    public static enum FlowControlMode
+    {
+        NONE(SerialPort.FLOWCONTROL_NONE)
+        , RTSCTS_IN(SerialPort.FLOWCONTROL_RTSCTS_IN)
+        , RTSCTS_OUT(SerialPort.FLOWCONTROL_RTSCTS_OUT)
+        , XONXOFF_IN(SerialPort.FLOWCONTROL_XONXOFF_IN)
+        , XONXOFF_OUT(SerialPort.FLOWCONTROL_XONXOFF_OUT);
+        
+        private final int value;
+
+        private FlowControlMode(final int value)
+        {
+            this.value = value;
+        }
+        
+        private static int getValue(final EnumSet<FlowControlMode> flowContolMode)
+        {
+            int result = 0;
+            
+            if(flowContolMode.contains(NONE) && flowContolMode.size() > 1)
+            {
+                throw new IllegalArgumentException("Flow control mode 'none' can't combine with other modes");
+            }
+            
+            for(final FlowControlMode fcm: values())
+            {
+                if(flowContolMode.contains(fcm))
+                {
+                    result |= fcm.value;
+                }
+            }
+            
+            return result;
         }
     }
 }

@@ -64,8 +64,8 @@ public class AtImpl implements At
     
     private static final Logger LOG = LoggerFactory.getLogger(AtImpl.class);
     private static final byte DEFAULT_SLEEP_MILLIS = 10;
-    private static final short AT_RESPONSE_TIMEOUT = 5000;
-    private static final int AT_RESPONSE_TIMEOUT_ATD = 150000;
+    private static final long AT_RESPONSE_TIMEOUT = TimeUnit.SECONDS.toNanos(5);
+    private static final long AT_RESPONSE_TIMEOUT_ATD = TimeUnit.SECONDS.toNanos(15);
     private static final byte WAIT_TIMEOUT = 2;
     private static final byte WAIT_TRAILS = 3;
     private static final byte WAIT_TRAILS_ATD = 90;
@@ -382,7 +382,7 @@ public class AtImpl implements At
             {
                 try
                 {
-                    Thread.sleep(COMMAND_DELAY - currentDelay);
+                    Thread.sleep(TimeUnit.NANOSECONDS.toMillis(COMMAND_DELAY - currentDelay));
                 }
                 catch (final InterruptedException ex)
                 {
@@ -542,7 +542,7 @@ public class AtImpl implements At
         serialIn.mark(0);
         try(final ByteArrayOutputStream bos = new ByteArrayOutputStream())
         {
-            int atResponseTimeout = AT_RESPONSE_TIMEOUT;
+            long atResponseTimeout = AT_RESPONSE_TIMEOUT;
 
             while(!Thread.currentThread().isInterrupted())
             {
@@ -553,8 +553,6 @@ public class AtImpl implements At
                     bos.write(buf);
 
                     final String response = new String(bos.toByteArray(), BYTE_CHARSET);
-                    
-                    LOG.debug("READED: {}", response);
 
                     if(response.startsWith("ATD"))
                     {

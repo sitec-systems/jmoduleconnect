@@ -75,9 +75,9 @@ public class ProgressEvent extends EventObject
      * Gets the finished state of the operation.
      * @return If <code>true</code> the operation is done / If <code>false</code>
      *         and received from 
-     *         {@link ProgressListener#progressDone(de.sitec.jmoduleconnect.file.ProgressEvent) }
+     *         {@link ProgressListener#progressDone(de.sitec_systems.jmoduleconnect.file.ProgressEvent) }
      *         the operation has failed / If <code>false</code> and received from
-     *         {@link ProgressListener#progressReceived(de.sitec.jmoduleconnect.file.ProgressEvent) }
+     *         {@link ProgressListener#progressReceived(de.sitec_systems.jmoduleconnect.file.ProgressEvent) }
      *         the operation is in progress
      * @since 1.0
      */

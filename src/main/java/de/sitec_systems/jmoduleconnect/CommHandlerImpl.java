@@ -50,7 +50,7 @@ import org.slf4j.LoggerFactory;
  * Implements the {@link CommHandler} interface. This class abstracts the 
  * communication to the connected device. For receiving data its necessary to 
  * add an {@link ProtocolParser} with 
- * {@link #addProtocolParser(de.sitec.jmoduleconnect.ProtocolParser) }.
+ * {@link #addProtocolParser(de.sitec_systems.jmoduleconnect.ProtocolParser) }.
  * If data available on the {@link InputStream} it will commit to an registered 
  * {@link ProtocolParser}. The {@link ProtocolParser} can check for valid protocol 
  * with {@link ProtocolParser#isProtocol(java.io.InputStream) }. If the response 

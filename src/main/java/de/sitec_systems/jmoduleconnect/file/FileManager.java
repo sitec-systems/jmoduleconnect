@@ -26,7 +26,7 @@
  * Author: Mattes Standfuss
  * Copyright (c): sitec systems GmbH, 2015
  */
-package de.sitec.jmoduleconnect.file;
+package de.sitec_systems.jmoduleconnect.file;
 
 import java.io.Closeable;
 import java.io.IOException;

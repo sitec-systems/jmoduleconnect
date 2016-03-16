@@ -26,31 +26,32 @@
  * Author: Mattes Standfuss
  * Copyright (c): sitec systems GmbH, 2015
  */
-package de.sitec.jmoduleconnect.file;
+package de.sitec_systems.jmoduleconnect;
 
-import java.util.EventListener;
+import java.io.IOException;
+import java.io.InputStream;
 
 /**
- * An interface for receiving progress informations for file operations.
+ * An interface for interpretation and parsing of protocols.
  * @author sitec systems GmbH
  * @since 1.0
- * @see OperationType
  */
-public interface ProgressListener extends EventListener
+public interface ProtocolParser
 {
     /**
-     * Notifys the operation is done. If the return value of 
-     * {@link ProgressEvent#isDone() } is <code>false</code> the operation
-     * failed.
-     * @param progressEvent The event data
+     * Returns <code>true</code> if the input can interpreted by this parser.
+     * @param is The {@link InputStream}
+     * @return <code>true</code> if the input can interpreted by this parser
+     * @throws IOException An exception at reading from {@link InputStream}
      * @since 1.0
      */
-    void progressDone(final ProgressEvent progressEvent);
+    boolean isProtocol(final InputStream is) throws IOException;
     
     /**
-     * Notifys about the current state of the operation.
-     * @param progressEvent The event data
+     * Reads and parses an protocol from {@link InputStream}.
+     * @param is The {@link InputStream}
+     * @throws IOException An exception at reading from {@link InputStream}
      * @since 1.0
      */
-    void progressReceived(final ProgressEvent progressEvent);
+    void parse(final InputStream is) throws IOException;
 }

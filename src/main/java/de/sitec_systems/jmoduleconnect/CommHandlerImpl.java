@@ -26,7 +26,7 @@
  * Author: Mattes Standfuss
  * Copyright (c): sitec systems GmbH, 2015
  */
-package de.sitec.jmoduleconnect;
+package de.sitec_systems.jmoduleconnect;
 
 import gnu.io.CommPort;
 import gnu.io.CommPortIdentifier;

@@ -26,38 +26,21 @@
  * Author: Mattes Standfuss
  * Copyright (c): sitec systems GmbH, 2015
  */
-package de.sitec.jmoduleconnect;
+package de.sitec_systems.jmoduleconnect.at;
 
-import java.io.Closeable;
-import java.io.IOException;
+import java.util.EventListener;
 
 /**
- * An interface for the primitive communication with the device.
+ * An interface for receiving <b>AT</b> events from device.
  * @author sitec systems GmbH
  * @since 1.0
  */
-public interface CommHandler extends Closeable
+public interface AtListener extends EventListener
 {
     /**
-     * Adds an <code>ProtocolParser</code> to the <code>CommHandler</code>. This
-     * is necessary for receiving and parsing data from device.
-     * @param protocolParser The <code>ProtocolParser</code>
+     * Notifys about new AT event.
+     * @param atEvent The event data
      * @since 1.0
      */
-    void addProtocolParser(final ProtocolParser protocolParser);
-    
-    /**
-     * Removes an <code>ProtocolParser</code> from the <code>CommHandler</code>.
-     * @param protocolParser The <code>ProtocolParser</code>
-     * @since 1.0
-     */
-    void removeProtocolParser(final ProtocolParser protocolParser);
-    
-    /**
-     * Sends data to the connected device.
-     * @param data The data
-     * @throws IOException The communication to the device failed
-     * @since 1.0
-     */
-    void send(final byte[] data) throws IOException;
+    void atEventReceived(final AtEvent atEvent);
 }

@@ -26,21 +26,14 @@
  * Author: Mattes Standfuss
  * Copyright (c): sitec systems GmbH, 2015
  */
-package de.sitec.jmoduleconnect.at;
-
-import java.util.EventListener;
+package de.sitec_systems.jmoduleconnect.file;
 
 /**
- * An interface for receiving <b>AT</b> events from device.
+ * Defines operations which supports {@link ProgressEvent}.
  * @author sitec systems GmbH
  * @since 1.0
  */
-public interface AtListener extends EventListener
+public enum OperationType
 {
-    /**
-     * Notifys about new AT event.
-     * @param atEvent The event data
-     * @since 1.0
-     */
-    void atEventReceived(final AtEvent atEvent);
+    GET_FILE, PUT_FILE;
 }

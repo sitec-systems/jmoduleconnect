@@ -26,14 +26,38 @@
  * Author: Mattes Standfuss
  * Copyright (c): sitec systems GmbH, 2015
  */
-package de.sitec.jmoduleconnect.file;
+package de.sitec_systems.jmoduleconnect;
+
+import java.io.Closeable;
+import java.io.IOException;
 
 /**
- * Defines operations which supports {@link ProgressEvent}.
+ * An interface for the primitive communication with the device.
  * @author sitec systems GmbH
  * @since 1.0
  */
-public enum OperationType
+public interface CommHandler extends Closeable
 {
-    GET_FILE, PUT_FILE;
+    /**
+     * Adds an <code>ProtocolParser</code> to the <code>CommHandler</code>. This
+     * is necessary for receiving and parsing data from device.
+     * @param protocolParser The <code>ProtocolParser</code>
+     * @since 1.0
+     */
+    void addProtocolParser(final ProtocolParser protocolParser);
+    
+    /**
+     * Removes an <code>ProtocolParser</code> from the <code>CommHandler</code>.
+     * @param protocolParser The <code>ProtocolParser</code>
+     * @since 1.0
+     */
+    void removeProtocolParser(final ProtocolParser protocolParser);
+    
+    /**
+     * Sends data to the connected device.
+     * @param data The data
+     * @throws IOException The communication to the device failed
+     * @since 1.0
+     */
+    void send(final byte[] data) throws IOException;
 }

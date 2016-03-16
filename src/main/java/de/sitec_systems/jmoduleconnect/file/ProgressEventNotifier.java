@@ -26,9 +26,9 @@
  * Author: Mattes Standfuss
  * Copyright (c): sitec systems GmbH, 2015
  */
-package de.sitec.jmoduleconnect.file;
+package de.sitec_systems.jmoduleconnect.file;
 
-import de.sitec.jmoduleconnect.utils.AbstractEventNotifier;
+import de.sitec_systems.jmoduleconnect.utils.AbstractEventNotifier;
 import javax.swing.event.EventListenerList;
 
 /**

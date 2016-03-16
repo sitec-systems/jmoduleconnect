@@ -26,14 +26,14 @@
  * Author: Mattes Standfuss
  * Copyright (c): sitec systems GmbH, 2015
  */
-package de.sitec.jmoduleconnect.file;
+package de.sitec_systems.jmoduleconnect.file;
 
-import de.sitec.jmoduleconnect.ProtocolParser;
-import de.sitec.jmoduleconnect.utils.BinaryUtils;
-import de.sitec.jmoduleconnect.CommHandler;
-import de.sitec.jmoduleconnect.at.AtCommandFailedException;
-import de.sitec.jmoduleconnect.file.ObexHeader.Code;
-import de.sitec.jmoduleconnect.at.At;
+import de.sitec_systems.jmoduleconnect.ProtocolParser;
+import de.sitec_systems.jmoduleconnect.utils.BinaryUtils;
+import de.sitec_systems.jmoduleconnect.CommHandler;
+import de.sitec_systems.jmoduleconnect.at.AtCommandFailedException;
+import de.sitec_systems.jmoduleconnect.file.ObexHeader.Code;
+import de.sitec_systems.jmoduleconnect.at.At;
 import java.io.*;
 import java.nio.ByteBuffer;
 import java.nio.charset.Charset;

@@ -26,7 +26,7 @@
  * Author: Mattes Standfuss
  * Copyright (c): sitec systems GmbH, 2015
  */
-package de.sitec.jmoduleconnect.at;
+package de.sitec_systems.jmoduleconnect.at;
 
 /**
  * Thrown if the response of an AT command is <code>ERROR</code>.

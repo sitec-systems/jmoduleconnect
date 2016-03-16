@@ -26,9 +26,9 @@
  * Author: Mattes Standfuss
  * Copyright (c): sitec systems GmbH, 2015
  */
-package de.sitec.jmoduleconnect.file;
+package de.sitec_systems.jmoduleconnect.file;
 
-import de.sitec.jmoduleconnect.utils.BinaryUtils;
+import de.sitec_systems.jmoduleconnect.utils.BinaryUtils;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.text.SimpleDateFormat;

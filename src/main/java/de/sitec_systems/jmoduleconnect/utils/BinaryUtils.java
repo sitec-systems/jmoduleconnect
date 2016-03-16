@@ -26,7 +26,7 @@
  * Author: Mattes Standfuss
  * Copyright (c): sitec systems GmbH, 2015
  */
-package de.sitec.jmoduleconnect.utils;
+package de.sitec_systems.jmoduleconnect.utils;
 
 /**
  * Utils to handle data in binary format.

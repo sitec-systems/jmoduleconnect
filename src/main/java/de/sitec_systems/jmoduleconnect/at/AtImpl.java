@@ -30,6 +30,7 @@ package de.sitec_systems.jmoduleconnect.at;
 
 import de.sitec_systems.jmoduleconnect.CommHandler;
 import de.sitec_systems.jmoduleconnect.at.AtCommandFailedException.Type;
+import de.sitec_systems.jmoduleconnect.utils.BinaryUtils;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -63,6 +64,8 @@ public class AtImpl implements At
     private long lastCommandTime;
     
     private static final Logger LOG = LoggerFactory.getLogger(AtImpl.class);
+    private static final byte PROTOCOL_CHECK_WAIT_TRAILS = 100;
+    private static final byte PROTOCOL_CHECK_WAIT_TIME = 10;
     private static final byte DEFAULT_SLEEP_MILLIS = 10;
     private static final long AT_RESPONSE_TIMEOUT = TimeUnit.SECONDS.toNanos(5);
     private static final long AT_RESPONSE_TIMEOUT_ATD = TimeUnit.SECONDS.toNanos(15);
@@ -249,11 +252,41 @@ public class AtImpl implements At
     public boolean isProtocol(final InputStream is) throws IOException
     {
         is.mark(0);
-        final byte[] buffer = new byte[2];
-        is.read(buffer);
-        is.reset();
-        final String result = new String(buffer, BYTE_CHARSET);
-        return result.contains(AT_START) || result.matches(CR_LF);
+        try
+        {
+            for(int i=0; i<PROTOCOL_CHECK_WAIT_TRAILS; i++)
+            {
+                if(is.available() >= AT_START.length())
+                {
+                    final byte[] buffer = new byte[AT_START.length()];
+                    if(is.read(buffer) == AT_START.length())
+                    {
+                        final String result = new String(buffer, BYTE_CHARSET);
+
+                        return result.contains(AT_START) || result.matches(CR_LF);  
+                    }
+                }
+                else
+                {
+                    try
+                    {
+                        Thread.sleep(PROTOCOL_CHECK_WAIT_TIME);
+                    }
+                    catch (final InterruptedException ex)
+                    {
+                        LOG.debug("The waiting for AT start was interrupted", ex);
+                        Thread.currentThread().interrupt();
+                        break;
+                    }
+                }
+            }
+        }
+        finally
+        {
+            is.reset();
+        }
+
+        return false;
     }
     
     /** {@inheritDoc } */

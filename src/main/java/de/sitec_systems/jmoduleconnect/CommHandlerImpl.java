@@ -66,12 +66,12 @@ public class CommHandlerImpl implements CommHandler
 {
     private final List<ProtocolParser> protocolParserList;
     private SerialPort serialPort;
-    private BufferedInputStream serialIn;
     private OutputStream serialOut;
     
     private static final Logger LOG = LoggerFactory.getLogger(CommHandlerImpl.class);
     private static final String APP_PORT_NAME = "jModuleConnect";
     private static final short SERIAL_PORT_TIMEOUT = 2000;
+    private static final int STREAM_BUFFER_SIZE = 65536;
 
     private CommHandlerImpl()
     {
@@ -160,12 +160,11 @@ public class CommHandlerImpl implements CommHandler
         {
             throw new IOException("System not supported", ex);
         }
-        
-        serialIn = new BufferedInputStream(serialPort.getInputStream());
+                
         serialOut = serialPort.getOutputStream();
         try
         {
-            this.serialPort.addEventListener(new Listener(this.serialIn));
+            this.serialPort.addEventListener(new Listener());
         }
         catch (final TooManyListenersException ex)
         {
@@ -189,12 +188,6 @@ public class CommHandlerImpl implements CommHandler
     @Override
     public void close() throws IOException
     {
-        if(serialIn != null)
-        {
-            serialIn.close();
-            serialIn = null;
-        }
-        
         if(serialOut != null)
         {
             serialOut.close();
@@ -244,57 +237,47 @@ public class CommHandlerImpl implements CommHandler
      */
     private final class Listener implements SerialPortEventListener
     {
-        private final BufferedInputStream serialIn;
-
-        /**
-         * Constructor of this class.
-         * @param serialIn 
-         * @throws IllegalArgumentException If the parameter serialIn <code>
-         *         null</code>
-         * @since 1.0
-         */
-        public Listener(final BufferedInputStream serialIn)
-        {
-            if(serialIn == null)
-            {
-                throw new IllegalArgumentException("Parameter serialIn cant be null");
-            }
-            this.serialIn = serialIn;
-        }
-        
         /** {@inheritDoc } */
         @Override
         public void serialEvent(final SerialPortEvent spe)
         {
-            if(spe.getEventType() == SerialPortEvent.DATA_AVAILABLE)
+            try(final BufferedInputStream serialIn = new BufferedInputStream(serialPort.getInputStream()
+                    , STREAM_BUFFER_SIZE);)
             {
-//                System.out.println("SerialPortEvent - " + Thread.currentThread().getId());
-                try
+                if(spe.getEventType() == SerialPortEvent.DATA_AVAILABLE)
                 {
-                    while(serialIn.available() > 0)
+    //                System.out.println("SerialPortEvent - " + Thread.currentThread().getId());
+                    try
                     {
-                        boolean parsed = false;
-                        for(final ProtocolParser protocolParser: protocolParserList)
+                        while(serialIn.available() > 0)
                         {
-                            if(protocolParser.isProtocol(serialIn))
+                            boolean parsed = false;
+                            for(final ProtocolParser protocolParser: protocolParserList)
                             {
-                                protocolParser.parse(serialIn);
-                                parsed = true;
-                                break;
+                                if(protocolParser.isProtocol(serialIn))
+                                {
+                                    protocolParser.parse(serialIn);
+                                    parsed = true;
+                                    break;
+                                }
+                            }
+
+                            if(!parsed)
+                            {
+                               serialIn.skip(1);
+                               serialIn.mark(0);
                             }
                         }
-                        
-                        if(!parsed)
-                        {
-                           serialIn.skip(1);
-                           serialIn.mark(0);
-                        }
+                    }
+                    catch (final IOException ex)
+                    {
+                        LOG.error("Error at receiving data", ex);
                     }
                 }
-                catch (final IOException ex)
-                {
-                    LOG.error("Error at receiving data", ex);
-                }
+            }
+            catch(final IOException ex)
+            {
+                LOG.error("Processing serial event has failed", ex);
             }
         }
     }

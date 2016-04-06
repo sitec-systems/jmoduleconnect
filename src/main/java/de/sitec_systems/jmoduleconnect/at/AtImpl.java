@@ -66,10 +66,9 @@ public class AtImpl implements At
     private static final byte PROTOCOL_CHECK_WAIT_TRAILS = 100;
     private static final byte PROTOCOL_CHECK_WAIT_TIME = 10;
     private static final byte DEFAULT_SLEEP_MILLIS = 10;
-    private static final long AT_RESPONSE_TIMEOUT = TimeUnit.SECONDS.toNanos(10);
-    private static final long AT_RESPONSE_TIMEOUT_ATD = TimeUnit.SECONDS.toNanos(20);
+    private static final long AT_RESPONSE_TIMEOUT = TimeUnit.SECONDS.toNanos(15);
     private static final byte WAIT_TIMEOUT = 2;
-    private static final byte WAIT_TRAILS = 5;
+    private static final byte WAIT_TRAILS = 8;
     private static final byte WAIT_TRAILS_ATD = 90;
     private static final Charset BYTE_CHARSET = Charset.forName("ISO_8859_1");
     private static final String CR_LF = "\r\n";
@@ -574,8 +573,6 @@ public class AtImpl implements At
         serialIn.mark(0);
         try(final ByteArrayOutputStream bos = new ByteArrayOutputStream())
         {
-            long atResponseTimeout = AT_RESPONSE_TIMEOUT;
-
             while(!Thread.currentThread().isInterrupted())
             {
                 final byte[] buf = new byte[serialIn.available()];
@@ -585,11 +582,6 @@ public class AtImpl implements At
                     bos.write(buf);
 
                     final String response = new String(bos.toByteArray(), BYTE_CHARSET);
-
-                    if(response.startsWith("ATD"))
-                    {
-                        atResponseTimeout = AT_RESPONSE_TIMEOUT_ATD;
-                    }
 
                     if(response.length() > 3)
                     {
@@ -620,7 +612,7 @@ public class AtImpl implements At
                 else
                 {
                     final long runtime = System.nanoTime() - t1;
-                    if(runtime > atResponseTimeout)
+                    if(runtime > AT_RESPONSE_TIMEOUT)
                     {
                         throw new IOException("Response timeout waiting for OK or ERROR after "
                                 + TimeUnit.NANOSECONDS.toMillis(runtime) 

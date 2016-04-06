@@ -30,7 +30,6 @@ package de.sitec_systems.jmoduleconnect.at;
 
 import de.sitec_systems.jmoduleconnect.CommHandler;
 import de.sitec_systems.jmoduleconnect.at.AtCommandFailedException.Type;
-import de.sitec_systems.jmoduleconnect.utils.BinaryUtils;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -67,10 +66,10 @@ public class AtImpl implements At
     private static final byte PROTOCOL_CHECK_WAIT_TRAILS = 100;
     private static final byte PROTOCOL_CHECK_WAIT_TIME = 10;
     private static final byte DEFAULT_SLEEP_MILLIS = 10;
-    private static final long AT_RESPONSE_TIMEOUT = TimeUnit.SECONDS.toNanos(5);
-    private static final long AT_RESPONSE_TIMEOUT_ATD = TimeUnit.SECONDS.toNanos(15);
+    private static final long AT_RESPONSE_TIMEOUT = TimeUnit.SECONDS.toNanos(10);
+    private static final long AT_RESPONSE_TIMEOUT_ATD = TimeUnit.SECONDS.toNanos(20);
     private static final byte WAIT_TIMEOUT = 2;
-    private static final byte WAIT_TRAILS = 3;
+    private static final byte WAIT_TRAILS = 5;
     private static final byte WAIT_TRAILS_ATD = 90;
     private static final Charset BYTE_CHARSET = Charset.forName("ISO_8859_1");
     private static final String CR_LF = "\r\n";

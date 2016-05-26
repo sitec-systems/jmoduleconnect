@@ -188,6 +188,13 @@ public class CommHandlerImpl implements CommHandler
     @Override
     public void close() throws IOException
     {
+        protocolParserList.clear();
+        
+        if(serialPort != null)
+        {
+            serialPort.removeEventListener();
+        }
+        
         if(serialOut != null)
         {
             serialOut.close();
@@ -199,8 +206,6 @@ public class CommHandlerImpl implements CommHandler
             serialPort.close();
             serialPort = null;
         }
-        
-        protocolParserList.clear();
     }
 
     /** {@inheritDoc } */

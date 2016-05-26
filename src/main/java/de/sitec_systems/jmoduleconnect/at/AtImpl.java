@@ -86,6 +86,7 @@ public class AtImpl implements At
             + "|" + "(\\A(?!AT.*\\r)" + CR_LF + ".+" + CR_LF + "(" + CR_LF + "OK" 
             + ")?)", Pattern.DOTALL);
     private static final long COMMAND_DELAY = TimeUnit.MILLISECONDS.toNanos(100);
+    private static final byte AT_CONNECTING_TRAILS = 3;
 
     private AtImpl(final CommHandler commHandler, final boolean errorCodes)
     {
@@ -136,7 +137,21 @@ public class AtImpl implements At
         at.init();
         try
         {
-            at.send("ATE1", false);
+            for(int trails=0; trails<AT_CONNECTING_TRAILS; trails++)
+            {
+                try
+                {
+                    at.send("ATE1", false);
+                    break;
+                }
+                catch (final IOException ex)
+                {
+                    if(trails == (AT_CONNECTING_TRAILS - 1))
+                    {
+                        throw ex;
+                    }
+                }
+            }
             
             if(errorCodes)
             {
